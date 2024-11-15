@@ -25,7 +25,7 @@ const wampConn = new autobahn.Connection({
 
 mysqlEvents.addTrigger({
   name:'FILE_TRIGGER',
-  expression:'web_access.requests',
+  expression:`${global.config[process.env.NODE_ENV].DBDB}.${global.config[process.env.NODE_ENV].DBTABLE}`,
   statement: MySQLEvents.STATEMENTS.INSERT,
   onEvent: (event) => _mysqlEventHandler(event,wampConn)
 });
@@ -44,7 +44,7 @@ function _mysqlEventHandler(event, wampConn){
       //can't break out of a foreach. different loop would be better.
       if(query.endsWith(e)){
         if(wampConn.isOpen){
-          wampConn.session.publish('io.outlawdesigns.webaccess.fileDownloaded',[newRow]);
+          wampConn.session.publish(global.config[process.env.NODE_ENV].WAMPEVENTNAME,[newRow]);
           console.log('Event published!');
         }else{
           console.error('WAMP connection is not open')
