@@ -5,7 +5,7 @@ const autobahn = require('autobahn');
 global.config = require('./config');
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
-const mysqlConn = mysql.createConnection({
+const mysqlConn = mysql.createPool({
   host: global.config[process.env.NODE_ENV].DBHOST,
   user: global.config[process.env.NODE_ENV].DBUSER,
   password: global.config[process.env.NODE_ENV].DBPASS
