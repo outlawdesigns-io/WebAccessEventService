@@ -1,0 +1,8 @@
+version: '3.1'
+
+services:
+  backend:
+    image: webaccessevents-wamp
+    build:
+      context: $DOCKER_BUILD_DIR/WebAccessEventService/
+      dockerfile: $DOCKER_BUILD_DIR/WebAccessEventService/Dockerfile
