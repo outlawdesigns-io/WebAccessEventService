@@ -7,7 +7,7 @@ process.env.DBTABLE = process.env.DBTABLE || 'requests';
 process.env.WAMPURL = process.env.WAMPURL || 'ws://localhost:8080';
 process.env.WAMPREALM = process.env.WAMPREALM || 'realm1';
 process.env.WAMPEVENTNAME = process.env.WAMPEVENTNAME || 'io.outlawdesigns.webaccess.fileDownloaded';
-process.env.EXTENSIONS = process.env.EXTENSIONS.split(",") || ['.mp4',
+const defaultExtensions = ['.mp4',
   '.avi',
   '.mkv',
   '.mp3',
@@ -19,3 +19,9 @@ process.env.EXTENSIONS = process.env.EXTENSIONS.split(",") || ['.mp4',
   '.epub',
   '.log'
 ];
+
+const EXTENSIONS = process.env.EXTENSIONS?.trim() ? process.env.EXTENSIONS.split(',').map(s => s.trim()).filter(Boolean) : defaultExtensions;
+
+module.exports = {
+  EXTENSIONS
+}

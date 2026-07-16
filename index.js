@@ -1,7 +1,6 @@
 const mysql = require('mysql');
 const MySQLEvents = require('@rodrigogs/mysql-events');
 const autobahn = require('autobahn');
-
 const config = require('./config');
 
 const mysqlConn = mysql.createPool({
@@ -40,7 +39,7 @@ function _mysqlEventHandler(event, wampConn){
   let query = newRow.query;
   console.log(query);
   if(successCodes.includes(responseCode)){
-    process.env.EXTENSIONS.forEach((e)=>{
+    config.EXTENSIONS.forEach((e)=>{
       //can't break out of a foreach. different loop would be better.
       if(query.endsWith(e)){
         if(wampConn.isOpen){
