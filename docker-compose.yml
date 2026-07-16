@@ -1,8 +1,19 @@
-version: '3.1'
-
 services:
   backend:
-    image: webaccessevents-wamp
+    image: docker.outlawdesigns.io/webaccessevents:arm
+    environment:
+      NODE_ENV: production
+      DBHOST: localhost
+      DBUSER: root
+      DBPASS: example
+      DBDB: web_access
+      DBTABLE: requests
+      WAMPURL: ws://localhost:8080
+      WAMPREALM: realm1
+      WAMPEVENTNAME: io.outlawdesigns.webaccess.fileDownloaded
+      EXTENSIONS: ".mp4,.avi,.mkv,.mp3,.cbz,.cbr,.pdf,.chm,.txt,.epub,.log"
     build:
-      context: $DOCKER_BUILD_DIR/WebAccessEventService/
-      dockerfile: $DOCKER_BUILD_DIR/WebAccessEventService/Dockerfile
+      context: ./
+      dockerfile: ./Dockerfile
+    volumes:
+      - /tmp/log/:/log/

@@ -2,13 +2,12 @@ const mysql = require('mysql');
 const MySQLEvents = require('@rodrigogs/mysql-events');
 const autobahn = require('autobahn');
 
-global.config = require('./config');
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+const config = require('./config');
 
 const mysqlConn = mysql.createPool({
-  host: global.config[process.env.NODE_ENV].DBHOST,
-  user: global.config[process.env.NODE_ENV].DBUSER,
-  password: global.config[process.env.NODE_ENV].DBPASS
+  host: process.env.DBHOST,
+  user: process.env.DBUSER,
+  password: process.env.DBPASS
 });
 
 const mysqlEvents = new MySQLEvents(mysqlConn,{
@@ -19,13 +18,13 @@ const mysqlEvents = new MySQLEvents(mysqlConn,{
 });
 
 const wampConn = new autobahn.Connection({
-  url:global.config[process.env.NODE_ENV].WAMPURL,
-  realm:global.config[process.env.NODE_ENV].WAMPREALM
+  url:process.env.WAMPURL,
+  realm:process.env.WAMPREALM
 });
 
 mysqlEvents.addTrigger({
   name:'FILE_TRIGGER',
-  expression:`${global.config[process.env.NODE_ENV].DBDB}.${global.config[process.env.NODE_ENV].DBTABLE}`,
+  expression:`${process.env.DBDB}.${process.env.DBTABLE}`,
   statement: MySQLEvents.STATEMENTS.INSERT,
   onEvent: (event) => _mysqlEventHandler(event,wampConn)
 });
@@ -39,12 +38,14 @@ function _mysqlEventHandler(event, wampConn){
   let newRow = event.affectedRows[0].after;
   let responseCode = newRow.responseCode;
   let query = newRow.query;
+  console.log(query);
   if(successCodes.includes(responseCode)){
-    global.config[process.env.NODE_ENV].EXTENSIONS.forEach((e)=>{
+    process.env.EXTENSIONS.forEach((e)=>{
       //can't break out of a foreach. different loop would be better.
       if(query.endsWith(e)){
         if(wampConn.isOpen){
-          wampConn.session.publish(global.config[process.env.NODE_ENV].WAMPEVENTNAME,[newRow]);
+          wampConn.session.publish(process.env.WAMPEVENTNAME,[newRow]);
+          console.log(newRow);
           console.log('Event published!');
         }else{
           console.error('WAMP connection is not open')
