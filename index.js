@@ -43,7 +43,7 @@ function _mysqlEventHandler(event, wampConn){
   //console.log(query);
   if(successCodes.includes(responseCode)){
     for(let extension of config.EXTENSIONS){
-      if(query.endsWith(e)){
+      if(query.endsWith(extension)){
         if(wampConn.isOpen){
           wampConn.session.publish(process.env.WAMPEVENTNAME,[newRow]);
           console.log(newRow);
