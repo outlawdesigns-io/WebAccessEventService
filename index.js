@@ -1,7 +1,7 @@
 import mysql from 'mysql2';
 import ZongJi from '@vlasky/zongji';
 import autobahn from 'autobahn';
-import confir from './config.js';
+import config from './config.js';
 
 const mysqlConn = mysql.createPool({
   host: process.env.DBHOST,
