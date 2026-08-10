@@ -1,7 +1,7 @@
-const mysql = require('mysql');
-const MySQLEvents = require('@rodrigogs/mysql-events');
-const autobahn = require('autobahn');
-const config = require('./config');
+import mysql from 'mysql2';
+import ZongJi from '@vlasky/zongji';
+import autobahn from 'autobahn';
+import confir from './config.js';
 
 const mysqlConn = mysql.createPool({
   host: process.env.DBHOST,
@@ -9,38 +9,41 @@ const mysqlConn = mysql.createPool({
   password: process.env.DBPASS
 });
 
-const mysqlEvents = new MySQLEvents(mysqlConn,{
-  startAtEnd:true,
-  excludeSchemas:{
-    mysql:true
-  }
-});
+const zongji = new ZongJi(mysqlConn);
 
 const wampConn = new autobahn.Connection({
   url:process.env.WAMPURL,
   realm:process.env.WAMPREALM
 });
 
-mysqlEvents.addTrigger({
-  name:'FILE_TRIGGER',
-  expression:`${process.env.DBDB}.${process.env.DBTABLE}`,
-  statement: MySQLEvents.STATEMENTS.INSERT,
-  onEvent: (event) => _mysqlEventHandler(event,wampConn)
-});
-mysqlEvents.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
-mysqlEvents.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
+const zongOptions = {
+    startAtEnd: true,
+    excludeSchema: {
+        mysql: true
+    },
+    includeEvents: ['tablemap', 'writerows'],
+    includeSchema:{
+      [process.env.DBDB]:true
+    }
+};
 
+zongji.on('binlog', event => {
+  const eType = event.getTypeName();
+  if(eType === 'WriteRows'){
+    console.log(event.rows[0]);
+    // _mysqlEventHandler(event,wampConn);
+  }
+});
 
 const successCodes = [200,202,206,304];
 
 function _mysqlEventHandler(event, wampConn){
-  let newRow = event.affectedRows[0].after;
+  let newRow = event.rows[0];
   let responseCode = newRow.responseCode;
   let query = newRow.query;
-  console.log(query);
+  //console.log(query);
   if(successCodes.includes(responseCode)){
-    config.EXTENSIONS.forEach((e)=>{
-      //can't break out of a foreach. different loop would be better.
+    for(let extension of config.EXTENSIONS){
       if(query.endsWith(e)){
         if(wampConn.isOpen){
           wampConn.session.publish(process.env.WAMPEVENTNAME,[newRow]);
@@ -49,14 +52,15 @@ function _mysqlEventHandler(event, wampConn){
         }else{
           console.error('WAMP connection is not open')
         }
+        break;
       }
-    });
+    }
   }
 }
 
 wampConn.onopen = async (session)=>{
   console.log('Connected to WAMP router...');
-  await mysqlEvents.start();
+  zongji.start(zongOptions);
   console.log('Monitoring DB...');
 }
 wampConn.open();
