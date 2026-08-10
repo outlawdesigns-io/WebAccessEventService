@@ -30,8 +30,7 @@ const zongOptions = {
 zongji.on('binlog', event => {
   const eType = event.getTypeName();
   if(eType === 'WriteRows'){
-    console.log(event.rows[0]);
-    // _mysqlEventHandler(event,wampConn);
+    _mysqlEventHandler(event,wampConn);
   }
 });
 
