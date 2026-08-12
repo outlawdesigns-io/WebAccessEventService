@@ -3,6 +3,19 @@ import ZongJi from '@vlasky/zongji';
 import autobahn from 'autobahn';
 import config from './config.js';
 
+const BINLOG_EVENTS = {
+  INSERT:'WriteRows',
+  UPDATE:'UpdateRows',
+  DELETE:'DeleteRows'
+};
+
+const successCodes = [200,202,206,304];
+
+const wampConn = new autobahn.Connection({
+  url:process.env.WAMPURL,
+  realm:process.env.WAMPREALM
+});
+
 const mysqlConn = mysql.createPool({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
@@ -10,11 +23,6 @@ const mysqlConn = mysql.createPool({
 });
 
 const zongji = new ZongJi(mysqlConn);
-
-const wampConn = new autobahn.Connection({
-  url:process.env.WAMPURL,
-  realm:process.env.WAMPREALM
-});
 
 const zongOptions = {
     startAtEnd: true,
@@ -27,14 +35,23 @@ const zongOptions = {
     }
 };
 
-zongji.on('binlog', event => {
-  const eType = event.getTypeName();
-  if(eType === 'WriteRows'){
-    _mysqlEventHandler(event,wampConn);
+const triggers = [
+  {
+    expression:`${process.env.DBDB}.requests`,
+    event:BINLOG_EVENTS.INSERT,
+    handler: event => _mysqlEventHandler(event, wampConn)
   }
-});
+];
 
-const successCodes = [200,202,206,304];
+zongji.on('binlog', event => {
+  const table = event.tableMap[event.tableId];
+  if(!table){
+    return;
+  }
+  const expression = `${table.parentSchema}.${table.tableName}`;
+  const eventType = event.getTypeName();
+  triggers.filter(trigger => trigger.expression === expression && trigger.event === eventType).forEach(trigger => trigger.handler(event));
+});
 
 function _mysqlEventHandler(event, wampConn){
   let newRow = event.rows[0];
